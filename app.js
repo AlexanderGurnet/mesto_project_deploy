@@ -22,8 +22,12 @@ app.use((req, res, next) => {
   next();
 });
 app.use(bodyParser.json({ type: 'application/json' }));
-app.use(express.static(path.join(__dirname, 'public')));
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
+
+app.get('*', (req, res) => {
+  res.status(404);
+  res.send({ message: 'Запрашиваемый ресурс не найден' });
+});
 
 app.listen(PORT);
