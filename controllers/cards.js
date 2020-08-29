@@ -8,8 +8,15 @@ module.exports.getCards = (req, res) => {
 
 module.exports.deleteCardById = (req, res) => {
   const { cardId } = req.params;
-  Card.findByIdAndDelete(cardId).orFail()
-    .then((card) => res.send(card))
+  Card.findById(cardId).orFail()
+    .then((card) => {
+      if (String(card.owner) !== String(req.user._id)) {
+        res.status(403).send({ message: 'Вы не можете удалить карточку' });
+      } else {
+        Card.deleteOne(card)
+          .then((deletedCard) => res.send(deletedCard));
+      }
+    })
     .catch(() => res.status(404).send({ message: 'Карточка не найдена' }));
 };
 

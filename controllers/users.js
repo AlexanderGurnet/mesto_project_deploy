@@ -1,5 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const validator = require('validator');
+
 const User = require('../models/user');
 
 module.exports.login = (req, res) => {
@@ -7,7 +9,7 @@ module.exports.login = (req, res) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      const token = jwt.sign({ _id: user._id }, process.env.JWT_KEY, { expiresIn: '7d' });
 
       res
         .cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true })
@@ -34,22 +36,29 @@ module.exports.getUserById = (req, res) => {
 };
 
 module.exports.createUser = (req, res) => {
-  const {
-    email, password, name, about, avatar,
-  } = req.body;
-
-  bcrypt.hash(password, 10)
-    .then((hash) => User.create({
-      email, password: hash, name, about, avatar,
-    }))
-    .then((user) => res.send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Неверный запрос' });
-      } else {
-        res.status(500).send({ message: 'На сервере произошла ошибка' });
-      }
-    });
+  try {
+    const {
+      email, password, name, about, avatar,
+    } = req.body;
+    if (!validator.matches(password, /[a-zA-Z0-9*]{8,15}/gi)) {
+      res.status(400).send({ message: 'Поле password может содержать символы: *, a-z, A-Z, 0-9.' });
+    } else {
+      bcrypt.hash(password, 10)
+        .then((hash) => User.create({
+          email, password: hash, name, about, avatar,
+        }))
+        .then((user) => res.send({ name: user.name, about: user.about, email: user.email }))
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            res.status(400).send({ message: 'Неверный запрос' });
+          } else if (err.name === 'MongoError') {
+            res.status(409).send({ message: 'Пользователь уже существует' });
+          }
+        });
+    }
+  } catch (err) {
+    res.status(400).send({ message: 'Неверный запрос' });
+  }
 };
 
 module.exports.updateUser = (req, res) => {

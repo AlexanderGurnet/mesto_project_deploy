@@ -7,6 +7,7 @@ const cardRouter = require('./routes/cards');
 
 const auth = require('./middlewares/auth');
 const { login, createUser } = require('./controllers/users');
+require('dotenv').config();
 
 const { PORT = 3000 } = process.env;
 const app = express();
