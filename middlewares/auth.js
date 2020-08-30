@@ -14,7 +14,7 @@ module.exports = (req, res, next) => {
 
   let payload;
   try {
-    payload = jwt.verify(token, process.env.JWT_KEY);
+    payload = jwt.verify(token, (process.env.JWT_KEY || 'dev-key'));
   } catch (err) {
     return res
       .status(401)
