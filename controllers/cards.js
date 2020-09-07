@@ -1,55 +1,54 @@
 const Card = require('../models/card');
+const NotFoundError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send(cards))
-    .catch(() => res.status(400).send({ message: 'Неверный запрос' }));
+    .catch(next);
 };
 
-module.exports.deleteCardById = (req, res) => {
+module.exports.deleteCardById = (req, res, next) => {
   const { cardId } = req.params;
   Card.findById(cardId).orFail()
     .then((card) => {
+      if (!card) {
+        throw new NotFoundError(`Карточка с id ${cardId} не найдена`);
+      }
       if (String(card.owner) !== String(req.user._id)) {
-        res.status(403).send({ message: 'Вы не можете удалить карточку' });
+        throw new ForbiddenError('Вы не можете удалить эту карточку');
       } else {
         Card.deleteOne(card)
           .then((deletedCard) => res.send(deletedCard));
       }
     })
-    .catch(() => res.status(404).send({ message: 'Карточка не найдена' }));
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card.create({ name, link, owner })
     .then((card) => res.send(card))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Неверный запрос' });
-      } else {
-        res.status(500).send({ message: 'На сервере произошла ошибка' });
-      }
-    });
+    .catch(next);
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
-  ).orFail()
+  ).orFail(() => new NotFoundError(`Карточка c _id: ${req.params.cardId} не найдена`))
     .then((card) => res.send(card))
-    .catch(() => res.status(404).send({ message: 'Карточка не найдена' }));
+    .catch(next);
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
-  ).orFail()
+  ).orFail(() => new NotFoundError(`Карточка c _id: ${req.params.cardId} не найдена`))
     .then((card) => res.send(card))
-    .catch(() => res.status(404).send({ message: 'Карточка не найдена' }));
+    .catch(next);
 };
