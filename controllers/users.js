@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const validator = require('validator');
 
 const User = require('../models/user');
-const UnathorizedError = require('../errors/UnathorizedError');
 const NotFoundError = require('../errors/NotFoundError');
 const BadRequestError = require('../errors/BadRequestError');
 const ConflictError = require('../errors/ConflictError');
@@ -14,12 +13,11 @@ module.exports.login = (req, res, next) => {
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, (process.env.JWT_KEY || 'dev-key'), { expiresIn: '7d' });
-
       res
         .cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true })
+        .send({ message: 'Вы вошли!' })
         .end();
     })
-    .orFail(() => new UnathorizedError('Введите логин или пароль'))
     .catch(next);
 };
 
@@ -42,29 +40,25 @@ module.exports.createUser = (req, res, next) => {
     email, password, name, about, avatar,
   } = req.body;
 
-  if (!validator.matches(password, /[a-zA-Z0-9*]{8,15}/gi)) {
-    res.status(400).send({ message: 'Поле password может содержать символы: *, a-z, A-Z, 0-9.' });
-  } else {
-    bcrypt.hash(password, 10)
-      .then((hash) => User.create({
-        email, password: hash, name, about, avatar,
-      }))
-      .then((user) => res.send({ name: user.name, about: user.about, email: user.email }))
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          next(new BadRequestError('Неверный запрос'));
-        } else if (err.name === 'MongoError') {
-          next(new ConflictError('Пользователь уже существует'));
-        }
-      });
-  }
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      email, password: hash, name, about, avatar,
+    }))
+    .then((user) => res.send({ name: user.name, about: user.about, email: user.email }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Неверный запрос'));
+      } else if (err.name === 'MongoError' && err.code === 11000) {
+        next(new ConflictError('Пользователь уже существует'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
-  if (!(name && about)) {
-    throw new BadRequestError('Неверный запрос');
-  }
+
   User.findByIdAndUpdate(
     req.user._id,
     { name, about },

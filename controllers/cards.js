@@ -10,7 +10,7 @@ module.exports.getCards = (req, res, next) => {
 
 module.exports.deleteCardById = (req, res, next) => {
   const { cardId } = req.params;
-  Card.findById(cardId).orFail()
+  Card.findById(cardId)
     .then((card) => {
       if (!card) {
         throw new NotFoundError(`Карточка с id ${cardId} не найдена`);
@@ -19,7 +19,7 @@ module.exports.deleteCardById = (req, res, next) => {
         throw new ForbiddenError('Вы не можете удалить эту карточку');
       } else {
         Card.deleteOne(card)
-          .then((deletedCard) => res.send(deletedCard));
+          .then(() => res.send(card));
       }
     })
     .catch(next);
