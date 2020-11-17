@@ -13,7 +13,7 @@ module.exports.login = (req, res, next) => {
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, (process.env.JWT_KEY || 'dev-key'), { expiresIn: '7d' });
       res
-        .cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true })
+        .cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: true })
         .send({ message: 'Вы вошли!' })
         .end();
     })
