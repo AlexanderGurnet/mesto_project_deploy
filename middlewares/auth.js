@@ -9,17 +9,16 @@ module.exports = (req, res, next) => {
     next(new UnathorizedError('Необходима авторизация'));
   } else {
     const token = authorization.replace('Bearer ', '');
+
+    let payload;
+
+    try {
+      payload = jwt.verify(token, (process.env.JWT_KEY || 'dev-key'));
+    } catch (err) {
+      next(new UnathorizedError('Необходима авторизация'));
+    }
+    req.user = payload;
+
+    next();
   }
-
-  let payload;
-
-  try {
-    payload = jwt.verify(token, (process.env.JWT_KEY || 'dev-key'));
-  } catch (err) {
-    next(new UnathorizedError('Необходима авторизация'));
-  }
-
-  req.user = payload;
-
-  next();
 };
