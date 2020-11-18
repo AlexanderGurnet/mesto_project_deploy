@@ -1,7 +1,7 @@
 {
   "name": "mesto_project_backend",
   "version": "0.0.1",
-  "description": "",
+  "description": "REST api for mesto project constructed mainly by means of Node JS and Express.js",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
