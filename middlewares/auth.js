@@ -7,19 +7,18 @@ module.exports = (req, res, next) => {
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
     next(new UnathorizedError('Необходима авторизация'));
+  } else {
+    const token = authorization.replace('Bearer ', '');
+
+    let payload;
+
+    try {
+      payload = jwt.verify(token, (process.env.JWT_KEY || 'dev-key'));
+    } catch (err) {
+      next(new UnathorizedError('Необходима авторизация'));
+    }
+    req.user = payload;
+
+    next();
   }
-
-  const token = authorization.replace('Bearer ', '');
-
-  let payload;
-
-  try {
-    payload = jwt.verify(token, (process.env.JWT_KEY || 'dev-key'));
-  } catch (err) {
-    next(new UnathorizedError('Необходима авторизация'));
-  }
-
-  req.user = payload;
-
-  next();
 };
