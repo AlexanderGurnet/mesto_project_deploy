@@ -1,7 +1,7 @@
 # Mesto_project backend
 
-The server ip is [178.154.230.76](http://178.154.230.76/)
+The server ip is [130.193.39.74](http://130.193.39.74/)
 
-You can reach the backend (api) via [this](https://api.alexg.students.nomoreparties.co/) link
+You can reach the backend (api) via [this](https://api.mestoalex.students.nomoreparties.co/) link
 
-And the frontend part can be reached [here](https://alexg.students.nomoreparties.co/)
+And the frontend part can be reached [here](https://mestoalex.students.nomoreparties.co/)
